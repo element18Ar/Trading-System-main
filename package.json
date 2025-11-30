@@ -1,0 +1,32 @@
+{
+  "name": "trading-system",
+  "version": "1.0.0",
+  "description": "",
+  "main": "index.js",
+  "scripts": {
+    "dev:all": "concurrently -n Frontend,Authentication,Product,Negotiation -c cyan,yellow,green,blue \"cd frontend && npm run dev\" \"cd backend/auth-service && npm run dev\" \"cd backend/product-service && npm run dev\" \"cd backend/negotiation-service && npm run dev\""
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/element18Ar/Trading-System.git"
+  },
+  "keywords": [],
+  "author": "",
+  "license": "ISC",
+  "type": "module",
+  "bugs": {
+    "url": "https://github.com/element18Ar/Trading-System/issues"
+  },
+  "homepage": "https://github.com/element18Ar/Trading-System#readme",
+  "dependencies": {
+    "axios": "^1.13.2",
+    "bcryptjs": "^2.4.3",
+    "body-parser": "^1.20.3",
+    "concurrently": "^9.2.1",
+    "cors": "^2.8.5",
+    "dotenv-flow": "^4.1.0",
+    "express": "^4.21.2",
+    "jsonwebtoken": "^9.0.2",
+    "mongoose": "^8.20.1"
+  }
+}
