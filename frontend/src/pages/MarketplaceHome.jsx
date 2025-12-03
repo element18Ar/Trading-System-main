@@ -33,6 +33,33 @@ export default function MarketplaceHome({ canTrade = true }) {
   }, []);
 
   useEffect(() => {
+    const fetchAllSellers = async () => {
+      try {
+        const ids = Array.from(new Set(
+          allItems.map(i => (i && typeof i.seller === 'object' ? i.seller._id : i.seller)).filter(Boolean)
+        ));
+        const token = localStorage.getItem("authToken");
+        const missing = ids.filter(id => !sellerProfiles[id]);
+        await Promise.all(missing.map(async (id) => {
+          try {
+            const r = await fetch(`http://localhost:5000/api/users/${id}`, {
+              headers: token ? { Authorization: `Bearer ${token}` } : {},
+            });
+            if (!r.ok) return;
+            const u = await r.json();
+            setSellerProfiles(prev => ({ ...prev, [id]: u }));
+          } catch (e) {
+            console.error(e);
+          }
+        }));
+      } catch (e) {
+        console.error(e);
+      }
+    };
+    if (allItems.length > 0) fetchAllSellers();
+  }, [allItems]);
+
+  useEffect(() => {
     const fetchSeller = async (sellerId) => {
       if (!sellerId || sellerProfiles[sellerId]) return;
       try {
@@ -77,15 +104,26 @@ export default function MarketplaceHome({ canTrade = true }) {
               <h3 style={{ color: COLOR_TEXT_LIGHT, marginBottom: '0.5rem' }}>{item.name}</h3>
               <p style={{ opacity: 0.7, fontSize: '0.9rem', minHeight: '40px' }}>{item.description?.substring(0, 100)}...</p>
               <p style={{ fontWeight: 600, marginTop: '1rem', color: COLOR_ACCENT }}>Barter Item</p>
-              <p
-                style={{ fontSize: '0.8rem', opacity: 0.7, cursor: 'pointer' }}
-                onMouseEnter={() => setHoveredSellerId(item.seller)}
-                onMouseLeave={() => setHoveredSellerId((prev) => (prev === item.seller ? null : prev))}
-              >
-                Seller: {String(item.seller || '').substring(0, 8)}...
-              </p>
+              {(() => {
+                const sellerObj = item && typeof item.seller === 'object' ? item.seller : null;
+                const sellerId = sellerObj ? sellerObj._id : item.seller;
+                const sellerName = sellerObj?.username || sellerProfiles[sellerId]?.username;
+                return (
+                  <p
+                    style={{ fontSize: '0.8rem', opacity: 0.7, cursor: 'pointer' }}
+                    onMouseEnter={() => setHoveredSellerId(sellerId)}
+                    onMouseLeave={() => setHoveredSellerId((prev) => (prev === sellerId ? null : prev))}
+                  >
+                    Seller: {sellerName || `${String(sellerId || '').substring(0, 8)}...`}
+                  </p>
+                );
+              })()}
 
-              {canTrade && String(item.seller) !== String(currentUserId) && (
+              {(() => {
+                const sellerObj = item && typeof item.seller === 'object' ? item.seller : null;
+                const sellerId = sellerObj ? sellerObj._id : item.seller;
+                return canTrade && String(sellerId) !== String(currentUserId);
+              })() && (
                 <button
                   style={{ marginTop: '0.75rem', padding: '0.6rem 0.8rem', borderRadius: '8px', border: 'none', background: COLOR_ACCENT, color: COLOR_PRIMARY_DARK, fontWeight: 700, cursor: 'pointer' }}
                   onClick={async () => {
@@ -96,9 +134,11 @@ export default function MarketplaceHome({ canTrade = true }) {
                       return;
                     }
                     try {
+                      const sellerObj = item && typeof item.seller === 'object' ? item.seller : null;
+                      const sellerId = sellerObj ? sellerObj._id : item.seller;
                       const res = await createTrade({
                         initiatorId,
-                        receiverId: item.seller,
+                        receiverId: sellerId,
                         receiverItemId: item._id,
                         itemId: item._id,
                       });

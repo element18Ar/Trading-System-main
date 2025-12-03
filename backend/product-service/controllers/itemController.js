@@ -43,7 +43,6 @@ export const listItem = async (req, res) => {
 // Change: Use 'export const' instead of 'exports.getAllItems ='
 export const getAllItems = async (req, res) => {
     try {
-        // 1. Fetch all items that are currently listed
         const items = await Item.find({ isListed: true });
         
         // 2. Send a success response (Status 200: OK)

@@ -15,15 +15,24 @@ loadEnv(import.meta.url);
 const app = express();
 app.use(express.json());
 
-app.use(cors({
-  origin: [
-    "http://localhost:5173",
-    "http://localhost:5175",
-  ],
+const corsOptions = {
+  origin: (origin, cb) => cb(null, origin || true),
   credentials: true,
   methods: ["GET","POST","PUT","PATCH","DELETE","OPTIONS"],
   allowedHeaders: ["Content-Type","Authorization"],
-}));
+  optionsSuccessStatus: 204,
+};
+app.use(cors(corsOptions));
+app.use((req, res, next) => {
+  const origin = req.headers.origin;
+  if (origin) res.header("Access-Control-Allow-Origin", origin);
+  res.header("Vary", "Origin");
+  res.header("Access-Control-Allow-Credentials", "true");
+  res.header("Access-Control-Allow-Headers", "Content-Type, Authorization");
+  res.header("Access-Control-Allow-Methods", "GET,POST,PUT,PATCH,DELETE,OPTIONS");
+  if (req.method === "OPTIONS") return res.sendStatus(204);
+  next();
+});
 
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
@@ -45,10 +54,14 @@ app.post("/api/token/exchange", (req, res) => {
   try {
     const accessSecret = process.env.ACCESS_TOKEN_SECRET || 'dev_secret_key';
     const serviceSecret = process.env.JWT_SECRET || 'dev_secret_key';
+    const refreshSecret = process.env.REFRESH_TOKEN_SECRET || 'dev_secret_key';
     let decoded;
     try { decoded = jwt.verify(token, accessSecret); } catch {}
     if (!decoded) {
       try { decoded = jwt.verify(token, serviceSecret); } catch {}
+    }
+    if (!decoded) {
+      try { decoded = jwt.verify(token, refreshSecret); } catch {}
     }
     if (!decoded) {
       return res.status(403).json({ message: 'Invalid or expired token' });

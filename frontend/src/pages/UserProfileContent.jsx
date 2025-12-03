@@ -1,4 +1,6 @@
 import { useState, useEffect } from "react";
+import { refreshToken as refreshAccessToken } from "../api/authApi.js";
+import { Trash } from "lucide-react";
 
 const COLOR_PRIMARY_DARK = "#2C2D2D";
 const COLOR_ACCENT = "#00BFA5";
@@ -71,10 +73,58 @@ const initialUserDetails = {
     const fetchUserItems = async () => {
       setLoading(true);
       try {
-        const token = localStorage.getItem("productServiceToken") || localStorage.getItem("authToken");
-        const res = await fetch("http://localhost:5001/api/v1/products/items/mine", {
+        const ensureToken = async () => {
+          const existing = localStorage.getItem("productServiceToken");
+          if (existing) return existing;
+          let access = localStorage.getItem("authToken");
+          if (!access) return null;
+          // Try exchange with current access
+          try {
+            const exRes = await fetch("http://localhost:5001/api/token/exchange", {
+              method: "POST",
+              headers: { Authorization: `Bearer ${access}` },
+            });
+            if (exRes.ok) {
+              const ex = await exRes.json();
+              if (ex?.token) {
+                localStorage.setItem("productServiceToken", ex.token);
+                return ex.token;
+              }
+            }
+          } catch {}
+          // If exchange failed, refresh access token and try again
+          try {
+            const rt = await refreshAccessToken();
+            if (rt?.accessToken) {
+              access = rt.accessToken;
+              localStorage.setItem("authToken", access);
+              const exRes2 = await fetch("http://localhost:5001/api/token/exchange", {
+                method: "POST",
+                headers: { Authorization: `Bearer ${access}` },
+              });
+              if (exRes2.ok) {
+                const ex2 = await exRes2.json();
+                if (ex2?.token) {
+                  localStorage.setItem("productServiceToken", ex2.token);
+                  return ex2.token;
+                }
+              }
+            }
+          } catch {}
+          return access;
+        };
+
+        let token = await ensureToken();
+        let res = await fetch("http://localhost:5001/api/v1/products/items/mine", {
           headers: token ? { Authorization: `Bearer ${token}` } : {}
         });
+        if (res.status === 403) {
+          try { localStorage.removeItem("productServiceToken"); } catch {}
+          token = await ensureToken();
+          res = await fetch("http://localhost:5001/api/v1/products/items/mine", {
+            headers: token ? { Authorization: `Bearer ${token}` } : {}
+          });
+        }
         if (!res.ok) throw new Error(`HTTP error! status: ${res.status}`);
         const data = await res.json();
         const itemsArray = Array.isArray(data?.data?.items) ? data.data.items : (Array.isArray(data?.items) ? data.items : []);
@@ -92,6 +142,51 @@ const initialUserDetails = {
 
   const editButtonStyle = { backgroundColor: COLOR_ACCENT, color: COLOR_PRIMARY_DARK, border: 'none', padding: '0.4rem 0.8rem', borderRadius: '4px', fontWeight: 'bold', cursor: 'pointer', marginLeft: '1rem' };
   const cancelButtonStyle = { backgroundColor: COLOR_DANGER, color: COLOR_TEXT_LIGHT, border: 'none', padding: '0.4rem 0.8rem', borderRadius: '4px', fontWeight: 'bold', cursor: 'pointer', marginLeft: '0.5rem' };
+
+  const handleDeleteItem = async (id) => {
+    if (!window.confirm('Delete this item?')) return;
+    try {
+      const ensureToken = async () => {
+        const existing = localStorage.getItem("productServiceToken");
+        if (existing) return existing;
+        const access = localStorage.getItem("authToken");
+        if (!access) return null;
+        try {
+          const exRes = await fetch("http://localhost:5001/api/token/exchange", {
+            method: "POST",
+            headers: { Authorization: `Bearer ${access}` },
+          });
+          if (exRes.ok) {
+            const ex = await exRes.json();
+            if (ex?.token) {
+              localStorage.setItem("productServiceToken", ex.token);
+              return ex.token;
+            }
+          }
+        } catch {}
+        return access;
+      };
+
+      let token = await ensureToken();
+      let res = await fetch(`http://localhost:5001/api/v1/products/items/${id}`, {
+        method: 'DELETE',
+        headers: token ? { Authorization: `Bearer ${token}` } : {},
+      });
+      if (res.status === 403) {
+        try { localStorage.removeItem("productServiceToken"); } catch {}
+        token = await ensureToken();
+        res = await fetch(`http://localhost:5001/api/v1/products/items/${id}`, {
+          method: 'DELETE',
+          headers: token ? { Authorization: `Bearer ${token}` } : {},
+        });
+      }
+      if (!res.ok) throw new Error(`HTTP error! status: ${res.status}`);
+      setItems(prev => prev.filter(i => i._id !== id));
+    } catch (e) {
+      console.error(e);
+      alert('Failed to delete item.');
+    }
+  };
 
   return (
     <div style={{ padding: "2rem" }}>
@@ -171,7 +266,16 @@ const initialUserDetails = {
                   No photo
                 </div>
               )}
-              <h4 style={{ color: COLOR_ACCENT, marginBottom: '0.5rem' }}>{item.name}</h4>
+              <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '0.5rem' }}>
+                <h4 style={{ color: COLOR_ACCENT, margin: 0 }}>{item.name}</h4>
+                <button
+                  title="Delete"
+                  style={{ display: 'inline-flex', alignItems: 'center', justifyContent: 'center', width: 32, height: 32, borderRadius: '8px', border: 'none', backgroundColor: COLOR_DANGER, color: COLOR_TEXT_LIGHT, cursor: 'pointer' }}
+                  onClick={() => handleDeleteItem(item._id)}
+                >
+                  <Trash size={16} />
+                </button>
+              </div>
               <p style={{ opacity: 0.7, fontSize: '0.9rem' }}>{item.description?.substring(0, 50)}...</p>
               <div style={{ marginTop: '0.5rem', fontSize: '0.8rem' }}>
                 <span

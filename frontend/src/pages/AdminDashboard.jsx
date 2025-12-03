@@ -23,6 +23,7 @@ export default function AdminDashboard() {
   const [items, setItems] = useState([]);
   const [pendingItems, setPendingItems] = useState([]);
   const [trades, setTrades] = useState([]);
+  const [sellerMap, setSellerMap] = useState({});
   const [currentAdminId, setCurrentAdminId] = useState(null);
   const [itemActionMessage, setItemActionMessage] = useState("");
   const [itemActionType, setItemActionType] = useState("success");
@@ -48,6 +49,34 @@ export default function AdminDashboard() {
     fetchPendingItems().then(res => setPendingItems(res.data)).catch(() => {});
     fetchAllTrades().then(res => setTrades(res.data)).catch(() => {});
   }, [navigate, userId]);
+
+  useEffect(() => {
+    const loadSellerNames = async () => {
+      try {
+        const token = localStorage.getItem("authToken");
+        const ids = Array.from(new Set([
+          ...items.map(i => (i && typeof i.seller === 'object' ? i.seller._id : i.seller)),
+          ...pendingItems.map(i => (i && typeof i.seller === 'object' ? i.seller._id : i.seller)),
+        ].filter(Boolean)));
+        const missing = ids.filter(id => !sellerMap[id]);
+        await Promise.all(missing.map(async (id) => {
+          try {
+            const r = await fetch(`http://localhost:5000/api/users/${id}`, {
+              headers: token ? { Authorization: `Bearer ${token}` } : {},
+            });
+            if (!r.ok) return;
+            const u = await r.json();
+            setSellerMap(prev => ({ ...prev, [id]: u }));
+          } catch (e) {
+            console.error(e);
+          }
+        }));
+      } catch (e) {
+        console.error(e);
+      }
+    };
+    if (items.length > 0 || pendingItems.length > 0) loadSellerNames();
+  }, [items, pendingItems]);
 
   const handleLogout = () => {
     localStorage.removeItem("userId");
@@ -199,7 +228,7 @@ export default function AdminDashboard() {
             {pendingItems.map(i => (
               <tr key={i._id} style={{ borderTop: "1px solid #444" }}>
                 <td style={{ padding: "0.5rem" }}>{i.name}</td>
-                <td style={{ padding: "0.5rem" }}>{String(i.seller).slice(0, 8)}...</td>
+                <td style={{ padding: "0.5rem" }}>{(i && typeof i.seller === 'object' ? i.seller.username : sellerMap[i.seller]?.username) || String(i.seller).slice(0, 8) + '...'}</td>
                 <td style={{ padding: "0.5rem" }}>{new Date(i.createdAt).toLocaleString()}</td>
                 <td style={{ padding: "0.5rem", display: "flex", gap: "0.5rem" }}>
                   <button
@@ -262,7 +291,7 @@ export default function AdminDashboard() {
           {items.map(i => (
             <tr key={i._id} style={{ borderTop: "1px solid #444" }}>
               <td style={{ padding: "0.5rem" }}>{i.name}</td>
-              <td style={{ padding: "0.5rem" }}>{String(i.seller).slice(0, 8)}...</td>
+              <td style={{ padding: "0.5rem" }}>{(i && typeof i.seller === 'object' ? i.seller.username : sellerMap[i.seller]?.username) || String(i.seller).slice(0, 8) + '...'}</td>
               <td style={{ padding: "0.5rem" }}>{i.status || "approved"}</td>
               <td style={{ padding: "0.5rem" }}>{i.isListed ? "Yes" : "No"}</td>
             </tr>

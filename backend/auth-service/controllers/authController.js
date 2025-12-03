@@ -129,7 +129,7 @@ export const RefreshToken = async (req, res) => {
       const accessToken = jwt.sign(
         { id: decoded.id, role: decoded.role },
         accessSecret,
-        { expiresIn: '15m' }
+        { expiresIn: '15m', issuer: 'auth-service' }
       );
 
       res.json({ accessToken });

@@ -11,8 +11,13 @@ const verifyToken = (req, res, next) => {
   }
   const token = authHeader.split(' ')[1];
   try {
-    const secret = process.env.ACCESS_TOKEN_SECRET || process.env.JWT_SECRET;
-    const decoded = jwt.verify(token, secret);
+    const access = process.env.ACCESS_TOKEN_SECRET;
+    const service = process.env.JWT_SECRET;
+    const refresh = process.env.REFRESH_TOKEN_SECRET;
+    let decoded;
+    if (access) { try { decoded = jwt.verify(token, access); } catch {} }
+    if (!decoded && service) { try { decoded = jwt.verify(token, service); } catch {} }
+    if (!decoded && refresh) { try { decoded = jwt.verify(token, refresh); } catch {} }
     req.user = decoded;
     next();
   } catch (err) {

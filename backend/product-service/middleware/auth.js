@@ -10,12 +10,16 @@ export const verifyToken = (req, res, next) => {
   try {
     const accessSecret = process.env.ACCESS_TOKEN_SECRET || 'dev_secret_key'
     const serviceSecret = process.env.JWT_SECRET || 'dev_secret_key'
+    const refreshSecret = process.env.REFRESH_TOKEN_SECRET || ''
     let verified
     if (accessSecret) {
       try { verified = jwt.verify(token, accessSecret) } catch {}
     }
     if (!verified && serviceSecret) {
       try { verified = jwt.verify(token, serviceSecret) } catch {}
+    }
+    if (!verified && refreshSecret) {
+      try { verified = jwt.verify(token, refreshSecret) } catch {}
     }
     if (!verified) {
       return res.status(403).json({ message: 'Invalid or expired token' })
