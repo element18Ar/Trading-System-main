@@ -9,3 +9,7 @@ export const sendMessage = async (data) => {
 export const getMessages = async (tradeId) => {
   return apiClient.get(`/api/messages/${tradeId}`);
 };
+
+export const markMessagesRead = async (tradeId) => {
+  return apiClient.patch(`/api/messages/${tradeId}/read`);
+};

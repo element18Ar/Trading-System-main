@@ -1,5 +1,7 @@
 import Trade from '../models/trade.js';
-import Item from '../../product-service/models/Item.js'; // Make sure this path is correct
+import Item from '../models/item.js';
+import '../models/user.js';
+import Message from '../models/message.js';
 
 export const createTrade = async (req, res) => {
   try {
@@ -102,7 +104,14 @@ export const getUserTrades = async (req, res) => {
       .populate('initiatorItems receiverItems')
       .populate('item');
 
-    res.status(200).json(trades);
+    const enriched = await Promise.all(trades.map(async t => {
+      const unreadCount = await Message.countDocuments({ tradeId: t._id, isRead: false, sender: { $ne: userId } });
+      const obj = t.toObject();
+      obj.unreadCount = unreadCount;
+      return obj;
+    }));
+
+    res.status(200).json(enriched);
   } catch (err) {
     res.status(500).json({ error: err.message });
   }

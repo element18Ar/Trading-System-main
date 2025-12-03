@@ -1,5 +1,6 @@
 import Message from '../models/message.js';
 import Trade from '../models/trade.js';
+import '../models/user.js';
 
 export const createMessage = async (req, res) => {
   try {
@@ -26,6 +27,18 @@ export const getMessages = async (req, res) => {
       .populate('sender', 'username avatar');
 
     res.status(200).json(messages);
+  } catch (err) {
+    res.status(500).json({ error: err.message });
+  }
+};
+
+export const markMessagesRead = async (req, res) => {
+  try {
+    const userId = req.user?.id;
+    const tradeId = req.params.tradeId;
+    if (!userId) return res.status(401).json({ error: 'Unauthorized' });
+    await Message.updateMany({ tradeId, isRead: false, sender: { $ne: userId } }, { $set: { isRead: true } });
+    res.status(200).json({ ok: true });
   } catch (err) {
     res.status(500).json({ error: err.message });
   }

@@ -33,6 +33,8 @@ export default function TradeInbox({ onSelectTrade }) {
 
   useEffect(() => {
     fetchTrades();
+    const id = setInterval(fetchTrades, 5000);
+    return () => clearInterval(id);
   }, []);
 
   const getPartner = (trade) => {
@@ -110,6 +112,11 @@ export default function TradeInbox({ onSelectTrade }) {
                   <p style={{ margin: 0, color: statusMeta.color, fontWeight: statusMeta.fontWeight }}>
                     {statusMeta.label}
                   </p>
+                  {trade.unreadCount > 0 && (
+                    <p style={{ margin: 0, fontSize: '0.8rem', color: '#ef4444', fontWeight: 700 }}>
+                      {trade.unreadCount} new
+                    </p>
+                  )}
                   <p style={{ margin: 0, fontSize: '0.8rem', opacity: 0.6 }}>
                     Active: {lastActive}
                   </p>

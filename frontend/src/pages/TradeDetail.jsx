@@ -1,7 +1,7 @@
 import React, { useState, useEffect, useRef } from 'react';
 import { Send, CornerLeftUp, CheckCircle, XCircle } from 'lucide-react';
 import { getTradeDetails, updateTradeStatus } from "../api/tradeApi.js";
-import { getMessages, sendMessage } from "../api/messageApi.js";
+import { getMessages, sendMessage, markMessagesRead } from "../api/messageApi.js";
 
 // --- 🎨 STYLE CONSTANTS ---
 const COLOR_ACCENT = "#00BFA5";
@@ -26,6 +26,7 @@ export default function TradeDetail({ tradeId, onBack }) {
 
             const messagesRes = await getMessages(tradeId);
             setMessages(messagesRes.data);
+            try { await markMessagesRead(tradeId); } catch {}
         } catch (error) {
             console.error("Error fetching trade data:", error);
             setTrade(null);
