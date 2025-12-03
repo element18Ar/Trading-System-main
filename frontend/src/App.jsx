@@ -24,9 +24,7 @@ function App() {
         {/* Admin Dashboard Route (additive) */}
       <Route path="/admin/:userId" element={<AdminDashboard />} />
 
-        {/* If needed later:
-          <Route path="*" element={<NotFound />} />
-        */}
+        
       </Routes>
     </Router>
   );

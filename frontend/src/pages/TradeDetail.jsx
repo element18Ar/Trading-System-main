@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useRef } from 'react';
+import React, { useState, useEffect, useRef, useCallback } from 'react';
 import { Send, CornerLeftUp, CheckCircle, XCircle } from 'lucide-react';
 import { getTradeDetails, updateTradeStatus } from "../api/tradeApi.js";
 import { getMessages, sendMessage, markMessagesRead } from "../api/messageApi.js";
@@ -18,7 +18,7 @@ export default function TradeDetail({ tradeId, onBack }) {
     const messagesEndRef = useRef(null);
 
     // --- FETCH DATA ---
-    const fetchTradeAndMessages = async () => {
+    const fetchTradeAndMessages = useCallback(async () => {
         try {
             setLoading(true);
             const tradeRes = await getTradeDetails(tradeId);
@@ -26,18 +26,18 @@ export default function TradeDetail({ tradeId, onBack }) {
 
             const messagesRes = await getMessages(tradeId);
             setMessages(messagesRes.data);
-            try { await markMessagesRead(tradeId); } catch {}
+            try { await markMessagesRead(tradeId); } catch (e) { console.error(e); }
         } catch (error) {
             console.error("Error fetching trade data:", error);
             setTrade(null);
         } finally {
             setLoading(false);
         }
-    };
+    }, [tradeId]);
 
     useEffect(() => {
         fetchTradeAndMessages();
-    }, [tradeId]);
+    }, [fetchTradeAndMessages]);
 
     useEffect(() => {
         // Scroll to the bottom of the messages list when messages update

@@ -1,6 +1,7 @@
 import axios from "axios";
 
-const PRODUCT_BASE = "http://localhost:5001";
+const PRODUCT_BASE = import.meta.env.VITE_PRODUCT_API_URL || "http://localhost:5001";
+const AUTH_BASE = import.meta.env.VITE_AUTH_API_URL || "http://localhost:5000";
 const PRODUCT_API = `${PRODUCT_BASE}/api/v1/products/items`;
 
 async function ensureProductToken() {
@@ -22,7 +23,7 @@ async function ensureProductToken() {
       // If exchange failed (e.g., expired auth), try refresh and retry once
       if (!token && (!res.ok || res.status === 401 || res.status === 403)) {
         const rt = localStorage.getItem("refreshToken");
-        const refreshRes = await fetch(`http://localhost:5000/api/auth/refresh`, {
+        const refreshRes = await fetch(`${AUTH_BASE}/api/auth/refresh`, {
           method: "POST",
           headers: rt ? { Authorization: `Bearer ${rt}` } : {},
           credentials: "include",
@@ -45,7 +46,9 @@ async function ensureProductToken() {
           }
         }
       }
-    } catch (_) {}
+    } catch (e) {
+      console.error(e);
+    }
   }
   return token || authToken || null;
 }

@@ -1,6 +1,8 @@
 import { useState, useEffect } from "react";
 import { refreshToken as refreshAccessToken } from "../api/authApi.js";
 import { Trash } from "lucide-react";
+const PRODUCT_API = import.meta.env.VITE_PRODUCT_API_URL || "http://localhost:5001";
+const AUTH_API = import.meta.env.VITE_AUTH_API_URL || "http://localhost:5000";
 
 const COLOR_PRIMARY_DARK = "#2C2D2D";
 const COLOR_ACCENT = "#00BFA5";
@@ -46,7 +48,7 @@ const initialUserDetails = {
       const formData = new FormData();
       formData.append("avatar", file);
       const token = localStorage.getItem("authToken");
-      const res = await fetch("http://localhost:5000/api/me/avatar", {
+      const res = await fetch(`${AUTH_API}/api/me/avatar`, {
         method: "POST",
         headers: token ? { Authorization: `Bearer ${token}` } : {},
         body: formData,
@@ -80,7 +82,7 @@ const initialUserDetails = {
           if (!access) return null;
           // Try exchange with current access
           try {
-            const exRes = await fetch("http://localhost:5001/api/token/exchange", {
+            const exRes = await fetch(`${PRODUCT_API}/api/token/exchange`, {
               method: "POST",
               headers: { Authorization: `Bearer ${access}` },
             });
@@ -91,14 +93,16 @@ const initialUserDetails = {
                 return ex.token;
               }
             }
-          } catch {}
+          } catch (e) {
+            console.error(e);
+          }
           // If exchange failed, refresh access token and try again
           try {
             const rt = await refreshAccessToken();
             if (rt?.accessToken) {
               access = rt.accessToken;
               localStorage.setItem("authToken", access);
-              const exRes2 = await fetch("http://localhost:5001/api/token/exchange", {
+              const exRes2 = await fetch(`${PRODUCT_API}/api/token/exchange`, {
                 method: "POST",
                 headers: { Authorization: `Bearer ${access}` },
               });
@@ -110,18 +114,20 @@ const initialUserDetails = {
                 }
               }
             }
-          } catch {}
+          } catch (e) {
+            console.error(e);
+          }
           return access;
         };
 
         let token = await ensureToken();
-        let res = await fetch("http://localhost:5001/api/v1/products/items/mine", {
+        let res = await fetch(`${PRODUCT_API}/api/v1/products/items/mine`, {
           headers: token ? { Authorization: `Bearer ${token}` } : {}
         });
         if (res.status === 403) {
-          try { localStorage.removeItem("productServiceToken"); } catch {}
+          try { localStorage.removeItem("productServiceToken"); } catch (e) { console.error(e); }
           token = await ensureToken();
-          res = await fetch("http://localhost:5001/api/v1/products/items/mine", {
+          res = await fetch(`${PRODUCT_API}/api/v1/products/items/mine`, {
             headers: token ? { Authorization: `Bearer ${token}` } : {}
           });
         }
@@ -152,7 +158,7 @@ const initialUserDetails = {
         const access = localStorage.getItem("authToken");
         if (!access) return null;
         try {
-          const exRes = await fetch("http://localhost:5001/api/token/exchange", {
+          const exRes = await fetch(`${PRODUCT_API}/api/token/exchange`, {
             method: "POST",
             headers: { Authorization: `Bearer ${access}` },
           });
@@ -163,19 +169,21 @@ const initialUserDetails = {
               return ex.token;
             }
           }
-        } catch {}
+          } catch (e) {
+            console.error(e);
+          }
         return access;
       };
 
       let token = await ensureToken();
-      let res = await fetch(`http://localhost:5001/api/v1/products/items/${id}`, {
+      let res = await fetch(`${PRODUCT_API}/api/v1/products/items/${id}`, {
         method: 'DELETE',
         headers: token ? { Authorization: `Bearer ${token}` } : {},
       });
       if (res.status === 403) {
-        try { localStorage.removeItem("productServiceToken"); } catch {}
+        try { localStorage.removeItem("productServiceToken"); } catch (e) { console.error(e); }
         token = await ensureToken();
-        res = await fetch(`http://localhost:5001/api/v1/products/items/${id}`, {
+        res = await fetch(`${PRODUCT_API}/api/v1/products/items/${id}`, {
           method: 'DELETE',
           headers: token ? { Authorization: `Bearer ${token}` } : {},
         });
@@ -211,7 +219,7 @@ const initialUserDetails = {
           >
             {avatar ? (
               <img
-                src={`http://localhost:5000/${avatar}`}
+                src={`${AUTH_API}/${avatar}`}
                 alt="Avatar"
                 style={{ width: '100%', height: '100%', objectFit: 'cover' }}
               />
@@ -257,7 +265,7 @@ const initialUserDetails = {
             <div key={item._id} style={{ padding: "1rem", background: COLOR_PRIMARY_DARK, borderRadius: "12px", boxShadow: "0 4px 10px rgba(0, 0, 0, 0.3)" }}>
               {item.image ? (
                 <img
-                  src={`http://localhost:5001/${String(item.image).replace(/\\\\/g, '/').replace(/^\//, '')}`}
+                  src={`${PRODUCT_API}/${String(item.image).replace(/\\/g, '/').replace(/^\//, '')}`}
                   alt={item.name}
                   style={{ height: '140px', width: '100%', objectFit: 'cover', borderRadius: '8px', marginBottom: '0.75rem' }}
                 />

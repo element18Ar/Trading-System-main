@@ -2,6 +2,7 @@ import { useEffect, useState } from "react";
 import { useNavigate, useParams } from "react-router-dom";
 import { fetchAllUsers, fetchAllItems, fetchAllTrades, suspendUser, unsuspendUser, fetchPendingItems, approveItem, rejectItem } from "../api/adminApi.js";
 import MarketplaceHome from "./MarketplaceHome.jsx";
+const AUTH_API = import.meta.env.VITE_AUTH_API_URL || "http://localhost:5000";
 
 const COLOR_PRIMARY_DARK = "#2C2D2D";
 const COLOR_ACCENT = "#00BFA5";
@@ -61,7 +62,7 @@ export default function AdminDashboard() {
         const missing = ids.filter(id => !sellerMap[id]);
         await Promise.all(missing.map(async (id) => {
           try {
-            const r = await fetch(`http://localhost:5000/api/users/${id}`, {
+            const r = await fetch(`${AUTH_API}/api/users/${id}`, {
               headers: token ? { Authorization: `Bearer ${token}` } : {},
             });
             if (!r.ok) return;
@@ -76,7 +77,7 @@ export default function AdminDashboard() {
       }
     };
     if (items.length > 0 || pendingItems.length > 0) loadSellerNames();
-  }, [items, pendingItems]);
+  }, [items, pendingItems, sellerMap]);
 
   const handleLogout = () => {
     localStorage.removeItem("userId");
@@ -131,8 +132,9 @@ export default function AdminDashboard() {
       const res = await fetchAllUsers();
       setUsers(res.data);
       closeSuspendDialog();
-    } catch (_) {
-      // keep silent in UI for now; could add toast later
+    } catch (e) {
+      console.error(e);
+      
     } finally {
       setUserActionLoading(null);
     }
@@ -144,7 +146,8 @@ export default function AdminDashboard() {
       await unsuspendUser(userId);
       const res = await fetchAllUsers();
       setUsers(res.data);
-    } catch (_) {
+    } catch (e) {
+      console.error(e);
     } finally {
       setUserActionLoading(null);
     }
@@ -245,7 +248,7 @@ export default function AdminDashboard() {
                         setItemActionType("success");
                         setItemActionMessage("Item approved and published to marketplace.");
                         setTimeout(() => setItemActionMessage(""), 3000);
-                      } catch (_) {}
+                      } catch (e) { console.error(e); }
                     }}
                   >
                     Approve
@@ -265,7 +268,7 @@ export default function AdminDashboard() {
                         setItemActionType("error");
                         setItemActionMessage("Item rejected.");
                         setTimeout(() => setItemActionMessage(""), 3000);
-                      } catch (_) {}
+                      } catch (e) { console.error(e); }
                     }}
                   >
                     Reject

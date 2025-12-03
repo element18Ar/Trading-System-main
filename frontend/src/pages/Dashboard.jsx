@@ -1,6 +1,7 @@
 import { useState, useEffect } from "react";
 import { useNavigate, useParams, useLocation } from 'react-router-dom';
 import axios from "axios";
+const AUTH_API = import.meta.env.VITE_AUTH_API_URL || "http://localhost:5000";
 import { refreshToken } from "../api/authApi.js";
 import { PlusCircle, User, Home, MessageSquare, LogOut, Shield } from "lucide-react";
 
@@ -42,7 +43,7 @@ export default function Dashboard() {
           return;
         }
         const doFetch = async (bearer) => {
-          return axios.get(`http://localhost:5000/api/users/${userId}`, {
+          return axios.get(`${AUTH_API}/api/users/${userId}`, {
             headers: bearer ? { Authorization: `Bearer ${bearer}` } : {},
             withCredentials: true,
           });
@@ -53,7 +54,9 @@ export default function Dashboard() {
         try {
           const existing = JSON.parse(localStorage.getItem('user') || 'null');
           localStorage.setItem('user', JSON.stringify({ ...(existing || {}), ...res.data }));
-        } catch {}
+        } catch (e) {
+          console.error(e);
+        }
       } catch (err) {
         const status = err?.response?.status;
         if (status === 401 || status === 403) {
@@ -62,14 +65,16 @@ export default function Dashboard() {
             const newToken = data.accessToken;
             if (newToken) {
               localStorage.setItem('authToken', newToken);
-              const res2 = await axios.get(`http://localhost:5000/api/users/${userId}`, {
+              const res2 = await axios.get(`${AUTH_API}/api/users/${userId}`, {
                 headers: { Authorization: `Bearer ${newToken}` }
               });
               setUser(res2.data);
               try {
                 const existing = JSON.parse(localStorage.getItem('user') || 'null');
                 localStorage.setItem('user', JSON.stringify({ ...(existing || {}), ...res2.data }));
-              } catch {}
+              } catch (e) {
+                console.error(e);
+              }
               return;
             }
           } catch (refreshErr) {
@@ -93,7 +98,7 @@ export default function Dashboard() {
       try {
         const token = localStorage.getItem('authToken');
         if (!token) return;
-        const res = await axios.get(`http://localhost:5000/api/users/${userId}`, {
+        const res = await axios.get(`${AUTH_API}/api/users/${userId}`, {
           headers: { Authorization: `Bearer ${token}` },
         });
         const u = res.data;
@@ -105,8 +110,9 @@ export default function Dashboard() {
         } else {
           setSuspensionInfo(null);
         }
-      } catch {
-        // ignore
+      } catch (e) {
+        console.error(e);
+      // ignore
       }
     };
 
@@ -318,7 +324,7 @@ export default function Dashboard() {
             >
               {user.avatar ? (
                 <img
-                  src={`http://localhost:5000/${user.avatar}`}
+                  src={`${AUTH_API}/${user.avatar}`}
                   alt="Avatar"
                   style={{ width: "100%", height: "100%", objectFit: "cover" }}
                 />

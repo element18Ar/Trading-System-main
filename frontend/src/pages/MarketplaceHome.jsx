@@ -1,6 +1,8 @@
 import { useState, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
 import { createTrade } from "../api/tradeApi.js";
+const PRODUCT_API = import.meta.env.VITE_PRODUCT_API_URL || "http://localhost:5001";
+const AUTH_API = import.meta.env.VITE_AUTH_API_URL || "http://localhost:5000";
 
 const COLOR_PRIMARY_DARK = "#2C2D2D";
 const COLOR_ACCENT = "#00BFA5";
@@ -18,7 +20,7 @@ export default function MarketplaceHome({ canTrade = true }) {
     const fetchItems = async () => {
       setLoading(true);
       try {
-        const res = await fetch("http://localhost:5001/api/v1/products/items");
+        const res = await fetch(`${PRODUCT_API}/api/v1/products/items`);
         if (!res.ok) throw new Error(`HTTP error! status: ${res.status}`);
         const data = await res.json();
         const items = Array.isArray(data?.data?.items) ? data.data.items : (Array.isArray(data?.items) ? data.items : []);
@@ -42,7 +44,7 @@ export default function MarketplaceHome({ canTrade = true }) {
         const missing = ids.filter(id => !sellerProfiles[id]);
         await Promise.all(missing.map(async (id) => {
           try {
-            const r = await fetch(`http://localhost:5000/api/users/${id}`, {
+            const r = await fetch(`${AUTH_API}/api/users/${id}`, {
               headers: token ? { Authorization: `Bearer ${token}` } : {},
             });
             if (!r.ok) return;
@@ -57,20 +59,22 @@ export default function MarketplaceHome({ canTrade = true }) {
       }
     };
     if (allItems.length > 0) fetchAllSellers();
-  }, [allItems]);
+  }, [allItems, sellerProfiles]);
 
   useEffect(() => {
     const fetchSeller = async (sellerId) => {
       if (!sellerId || sellerProfiles[sellerId]) return;
       try {
         const token = localStorage.getItem("authToken");
-        const res = await fetch(`http://localhost:5000/api/users/${sellerId}`, {
+        const res = await fetch(`${AUTH_API}/api/users/${sellerId}`, {
           headers: token ? { Authorization: `Bearer ${token}` } : {},
         });
         if (!res.ok) return;
         const data = await res.json();
         setSellerProfiles(prev => ({ ...prev, [sellerId]: data }));
-      } catch {}
+      } catch (e) {
+        console.error(e);
+      }
     };
 
     if (hoveredSellerId) {
@@ -92,7 +96,7 @@ export default function MarketplaceHome({ canTrade = true }) {
             <div key={item._id} style={{ padding: "1rem", background: COLOR_PRIMARY_DARK, borderRadius: "12px", boxShadow: "0 4px 10px rgba(0,0,0,0.3)", border: `1px solid ${COLOR_ACCENT}50` }}>
               {item.image ? (
                 <img
-                  src={`http://localhost:5001/${String(item.image).replace(/\\\\/g, '/').replace(/^\//, '')}`}
+                  src={`${PRODUCT_API}/${String(item.image).replace(/\\/g, '/').replace(/^\//, '')}`}
                   alt={item.name}
                   style={{ height: '150px', width: '100%', objectFit: 'cover', borderRadius: '8px', marginBottom: '1rem' }}
                 />

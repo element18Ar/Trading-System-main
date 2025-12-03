@@ -1,7 +1,10 @@
 import axios from "axios";
 
+const NEGOTIATION_API = import.meta.env.VITE_NEGOTIATION_API_URL || "http://localhost:5002";
+const AUTH_API = import.meta.env.VITE_AUTH_API_URL || "http://localhost:5000";
+
 const apiClient = axios.create({
-  baseURL: "http://localhost:5002",
+  baseURL: NEGOTIATION_API,
   withCredentials: false,
 });
 
@@ -11,7 +14,7 @@ apiClient.interceptors.request.use(async (config) => {
 
   if (!serviceToken && authToken) {
     try {
-      const res = await fetch("http://localhost:5002/api/token/exchange", {
+      const res = await fetch(`${NEGOTIATION_API}/api/token/exchange`, {
         method: "POST",
         headers: { Authorization: `Bearer ${authToken}` },
       });
@@ -22,7 +25,9 @@ apiClient.interceptors.request.use(async (config) => {
           serviceToken = data.token;
         }
       }
-    } catch (_) {}
+    } catch (e) {
+      console.error(e);
+    }
   }
 
   const tokenToUse = serviceToken || authToken;
@@ -35,7 +40,6 @@ apiClient.interceptors.request.use(async (config) => {
 
 export default apiClient;
 
-// Refresh on 401/403 and retry once
 apiClient.interceptors.response.use(
   (response) => response,
   async (error) => {
@@ -44,9 +48,9 @@ apiClient.interceptors.response.use(
     if (!original || original.__retry) return Promise.reject(error);
 
     if (status === 401 || status === 403) {
-    try {
-      const rt = localStorage.getItem("refreshToken");
-      const res = await fetch("http://localhost:5000/api/auth/refresh", {
+      try {
+        const rt = localStorage.getItem("refreshToken");
+        const res = await fetch(`${AUTH_API}/api/auth/refresh`, {
           method: "POST",
           headers: rt ? { Authorization: `Bearer ${rt}` } : {},
           credentials: "include",
@@ -55,7 +59,6 @@ apiClient.interceptors.response.use(
           const data = await res.json();
           if (data?.accessToken) {
             localStorage.setItem("authToken", data.accessToken);
-            // force service token re-exchange next request
             localStorage.removeItem("negotiationServiceToken");
             const token = data.accessToken;
             original.headers = original.headers || {};
@@ -64,7 +67,9 @@ apiClient.interceptors.response.use(
             return apiClient(original);
           }
         }
-      } catch (_) {}
+      } catch (e) {
+        console.error(e);
+      }
     }
     return Promise.reject(error);
   }

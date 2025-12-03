@@ -2,6 +2,8 @@ import React, { useState, useEffect } from "react";
 import { Link, useNavigate } from "react-router-dom";
 import { Eye, EyeOff } from "lucide-react";
 import axios from "axios";
+const AUTH_API = import.meta.env.VITE_AUTH_API_URL || "http://localhost:5000";
+const PRODUCT_API = import.meta.env.VITE_PRODUCT_API_URL || "http://localhost:5001";
 
 // Custom hook to detect screen size
 const useScreenSize = () => {
@@ -19,7 +21,7 @@ const useScreenSize = () => {
 
 // --- API CALL FUNCTION ---
 const loginUser = async (data) => {
-  return await axios.post("http://localhost:5000/api/auth/login", data, {
+  return await axios.post(`${AUTH_API}/api/auth/login`, data, {
     withCredentials: true, // send cookies
   });
 };
@@ -110,7 +112,7 @@ export default function Login() {
 
       // Obtain a service-scoped token for product-service (optional optimization)
       try {
-        const exRes = await fetch("http://localhost:5001/api/token/exchange", {
+        const exRes = await fetch(`${PRODUCT_API}/api/token/exchange`, {
           method: "POST",
           headers: { Authorization: `Bearer ${response.data.accessToken}` },
         });
@@ -118,7 +120,7 @@ export default function Login() {
           const ex = await exRes.json();
           if (ex?.token) localStorage.setItem("productServiceToken", ex.token);
         }
-      } catch {}
+      } catch (e) { console.error(e); }
 
       console.log("Login successful!", response.data);
       navigate(`/dashboard/${response.data.user._id}`); //newly added

@@ -1,10 +1,13 @@
 import axios from 'axios';
+const AUTH_API = import.meta.env.VITE_AUTH_API_URL || 'http://localhost:5000';
+const PRODUCT_API = import.meta.env.VITE_PRODUCT_API_URL || 'http://localhost:5001';
+const NEGOTIATION_API = import.meta.env.VITE_NEGOTIATION_API_URL || 'http://localhost:5002';
 
 // Admin APIs (includes read-only views and moderation actions)
 
 export const fetchAllUsers = () => {
   const token = localStorage.getItem('authToken');
-  return axios.get('http://localhost:5000/api/admin/users', {
+  return axios.get(`${AUTH_API}/api/admin/users`, {
     headers: token ? { Authorization: `Bearer ${token}` } : {},
     withCredentials: true,
   });
@@ -13,7 +16,7 @@ export const fetchAllUsers = () => {
 export const suspendUser = (userId, { amount, unit, reason, until }) => {
   const token = localStorage.getItem('authToken');
   return axios.post(
-    `http://localhost:5000/api/admin/users/${userId}/suspend`,
+    `${AUTH_API}/api/admin/users/${userId}/suspend`,
     { amount, unit, reason, until },
     {
       headers: token ? { Authorization: `Bearer ${token}` } : {},
@@ -25,7 +28,7 @@ export const suspendUser = (userId, { amount, unit, reason, until }) => {
 export const unsuspendUser = (userId) => {
   const token = localStorage.getItem('authToken');
   return axios.post(
-    `http://localhost:5000/api/admin/users/${userId}/unsuspend`,
+    `${AUTH_API}/api/admin/users/${userId}/unsuspend`,
     {},
     {
       headers: token ? { Authorization: `Bearer ${token}` } : {},
@@ -36,21 +39,21 @@ export const unsuspendUser = (userId) => {
 
 export const fetchAllItems = () => {
   const token = localStorage.getItem('authToken');
-  return axios.get('http://localhost:5001/api/admin/items', {
+  return axios.get(`${PRODUCT_API}/api/admin/items`, {
     headers: token ? { Authorization: `Bearer ${token}` } : {},
   });
 };
 
 export const fetchAllTrades = () => {
   const token = localStorage.getItem('authToken');
-  return axios.get('http://localhost:5002/api/admin/trades', {
+  return axios.get(`${NEGOTIATION_API}/api/admin/trades`, {
     headers: token ? { Authorization: `Bearer ${token}` } : {},
   });
 };
 
 export const fetchPendingItems = () => {
   const token = localStorage.getItem('authToken');
-  return axios.get('http://localhost:5001/api/admin/items/pending', {
+  return axios.get(`${PRODUCT_API}/api/admin/items/pending`, {
     headers: token ? { Authorization: `Bearer ${token}` } : {},
   });
 };
@@ -58,7 +61,7 @@ export const fetchPendingItems = () => {
 export const approveItem = (itemId) => {
   const token = localStorage.getItem('authToken');
   return axios.post(
-    `http://localhost:5001/api/admin/items/${itemId}/approve`,
+    `${PRODUCT_API}/api/admin/items/${itemId}/approve`,
     {},
     { headers: token ? { Authorization: `Bearer ${token}` } : {} },
   );
@@ -67,7 +70,7 @@ export const approveItem = (itemId) => {
 export const rejectItem = (itemId, note) => {
   const token = localStorage.getItem('authToken');
   return axios.post(
-    `http://localhost:5001/api/admin/items/${itemId}/reject`,
+    `${PRODUCT_API}/api/admin/items/${itemId}/reject`,
     { note },
     { headers: token ? { Authorization: `Bearer ${token}` } : {} },
   );

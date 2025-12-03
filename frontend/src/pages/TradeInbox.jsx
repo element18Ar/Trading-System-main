@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from "react";
+import React, { useState, useEffect, useCallback } from "react";
 import { List } from "lucide-react";
 import { getUserTrades } from "../api/tradeApi.js";
 
@@ -12,7 +12,7 @@ export default function TradeInbox({ onSelectTrade }) {
   const [loading, setLoading] = useState(true);
   const userId = localStorage.getItem("userId"); // Must be available from login
 
-  const fetchTrades = async () => {
+  const fetchTrades = useCallback(async () => {
     if (!userId) {
       console.error("User ID not found in localStorage.");
       setLoading(false);
@@ -29,13 +29,13 @@ export default function TradeInbox({ onSelectTrade }) {
     } finally {
       setLoading(false);
     }
-  };
+  }, [userId]);
 
   useEffect(() => {
     fetchTrades();
     const id = setInterval(fetchTrades, 5000);
     return () => clearInterval(id);
-  }, []);
+  }, [fetchTrades]);
 
   const getPartner = (trade) => {
     if (!trade?.initiator || !trade?.receiver) return { username: 'Unknown' };

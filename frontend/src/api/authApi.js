@@ -1,5 +1,5 @@
-// Base URL for your Auth Service
-const BACKEND_URL = "http://localhost:5000/api/auth";
+const AUTH_API = import.meta.env.VITE_AUTH_API_URL || "http://localhost:5000";
+const BACKEND_URL = `${AUTH_API}/api/auth`;
 
 // ----------------------------
 // Register a new user

@@ -28,8 +28,9 @@ const AddItemContent = ({ onSuccess }) => {
     formData.append('price', 0);
 
     try {
+      const PRODUCT_API = import.meta.env.VITE_PRODUCT_API_URL || "http://localhost:5001";
       const token = localStorage.getItem("productServiceToken") || localStorage.getItem("authToken");
-      let res = await fetch("http://localhost:5001/api/v1/products/items", {
+      let res = await fetch(`${PRODUCT_API}/api/v1/products/items`, {
         method: "POST",
         headers: token ? { Authorization: `Bearer ${token}` } : {},
         body: formData
@@ -44,10 +45,12 @@ const AddItemContent = ({ onSuccess }) => {
             auth = rt.accessToken;
             localStorage.setItem("authToken", auth);
           }
-        } catch {}
+        } catch (e) {
+          console.error(e);
+        }
         if (auth) {
           try {
-            const exRes = await fetch("http://localhost:5001/api/token/exchange", {
+            const exRes = await fetch(`${PRODUCT_API}/api/token/exchange`, {
               method: "POST",
               headers: { Authorization: `Bearer ${auth}` },
             });
@@ -55,14 +58,16 @@ const AddItemContent = ({ onSuccess }) => {
               const ex = await exRes.json();
               if (ex?.token) {
                 localStorage.setItem("productServiceToken", ex.token);
-                res = await fetch("http://localhost:5001/api/v1/products/items", {
+                res = await fetch(`${PRODUCT_API}/api/v1/products/items`, {
                   method: "POST",
                   headers: { Authorization: `Bearer ${ex.token}` },
                   body: formData
                 });
               }
             }
-          } catch {}
+          } catch (e) {
+            console.error(e);
+          }
         }
       }
       if (!res.ok) throw new Error(`HTTP error! status: ${res.status}`);
