@@ -274,7 +274,7 @@ export default function Homepage() {
           >
             {/* Replace the <span> with an <img> tag */}
             <img
-              src="/public/CADY.png"
+              src="/CADY.png"
               alt="Visual Representation"
               style={{
                 width: "100%",
