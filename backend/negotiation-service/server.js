@@ -4,13 +4,21 @@ import cors from "cors";
 import jwt from "jsonwebtoken";
 
 import connectDB from "../config/db.js";
-import { loadEnv } from "../config/loadEnv.js";
+import DotenvFlow from "dotenv-flow";
+import path from "path";
+import { fileURLToPath } from "url";
 
 import messageRoutes from "./routes/messageRoutes.js";
 import tradeRoutes from "./routes/tradeRoutes.js";
 import adminTradeRoutes from "./routes/adminTradeRoutes.js";
 
-loadEnv(import.meta.url);
+{
+  const callerFile = fileURLToPath(import.meta.url);
+  const serviceDir = path.dirname(callerFile);
+  const projectRoot = path.resolve(serviceDir, "../../");
+  DotenvFlow.config({ path: projectRoot, silent: true });
+  DotenvFlow.config({ path: serviceDir, silent: true, override: true });
+}
 
 const app = express();
 

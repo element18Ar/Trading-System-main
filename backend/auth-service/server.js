@@ -4,14 +4,22 @@ import cookieParser from "cookie-parser";
 import cors from "cors";//wala nakita dae..
 
 import connectDB from "../config/db.js"; 
-import { loadEnv } from "../config/loadEnv.js";
+import DotenvFlow from "dotenv-flow";
+import path from "path";
+import { fileURLToPath } from "url";
 
 import authRoutes from './routes/authRoutes.js'; 
 import userRoutes from './routes/userRoutes.js';
 import adminUserRoutes from './routes/adminUserRoutes.js';
 
 // Load environment variables
-loadEnv(import.meta.url);
+{
+  const callerFile = fileURLToPath(import.meta.url);
+  const serviceDir = path.dirname(callerFile);
+  const projectRoot = path.resolve(serviceDir, "../../");
+  DotenvFlow.config({ path: projectRoot, silent: true });
+  DotenvFlow.config({ path: serviceDir, silent: true, override: true });
+}
 
 // Create Express app
 const app = express();
@@ -42,6 +50,13 @@ app.use((req, res, next) => {
 app.use('/api/auth', authRoutes); 
 app.use('/api/users', userRoutes);
 app.use('/api/admin/users', adminUserRoutes);
+
+// Serve uploaded avatars
+{
+  const __filename = fileURLToPath(import.meta.url);
+  const __dirname = path.dirname(__filename);
+  app.use("/uploads", express.static(path.join(__dirname, "uploads")));
+}
 
 // Test route
 app.get("/", (req, res) => {

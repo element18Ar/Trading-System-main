@@ -9,8 +9,14 @@ import { fileURLToPath } from "url";
 import itemRoutes from "./routes/itemRoutes.js";
 import adminItemRoutes from "./routes/adminItemRoutes.js";
 import Item from "./models/Item.js";
-import { loadEnv } from "../config/loadEnv.js";
-loadEnv(import.meta.url);
+import DotenvFlow from "dotenv-flow";
+{
+  const callerFile = fileURLToPath(import.meta.url);
+  const serviceDir = path.dirname(callerFile);
+  const projectRoot = path.resolve(serviceDir, "../../");
+  DotenvFlow.config({ path: projectRoot, silent: true });
+  DotenvFlow.config({ path: serviceDir, silent: true, override: true });
+}
 
 const app = express();
 app.use(express.json());
